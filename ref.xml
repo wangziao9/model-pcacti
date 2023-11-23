@@ -1,0 +1,158 @@
+<cache_config>
+	
+	<transistor_type>cmos</transistor_type>
+	
+	
+	<technology_node>0.007</technology_node>
+	
+	
+	<operating_voltage>super-threshold</operating_voltage>
+	
+	
+	<temperature>300</temperature>
+	
+	
+	<cache_size>4194304</cache_size>
+	
+	
+	<block_size>64</block_size>
+	
+	
+	<associativity>8</associativity>
+	
+	
+	<devices>
+		<data_array>
+			<cell>xmls/devices/cmos_14nm_std.xml</cell>
+			<peripheral>xmls/devices/cmos_14nm_std.xml</peripheral>
+		</data_array>
+		
+		<tag_array>
+			<cell>xmls/devices/cmos_14nm_std.xml</cell>
+			<peripheral>xmls/devices/cmos_14nm_std.xml</peripheral>
+		</tag_array>
+		
+		<dram>xmls/devices/cmos_14nm_std.xml</dram>
+	</devices>
+	
+	<sram_cell>xmls/sram_cells/cmos_sram_6T.xml</sram_cell>
+
+	<ports>
+		<read_write_port>1</read_write_port>
+		<exclusive_read_port>0</exclusive_read_port>
+		<exclusive_write_port>0</exclusive_write_port>
+		<single_ended_read_ports>0</single_ended_read_ports>
+	</ports>
+	
+	
+	<cache_model>UCA</cache_model>
+	
+	
+	<uca_bank_count>4</uca_bank_count>
+	
+	
+	<nuca_bank_count>0</nuca_bank_count>
+	
+	
+	<bus_width>512</bus_width>
+	
+	
+	<memory_type>cache</memory_type>
+	
+	
+	<tag_size>default</tag_size>
+	
+	
+	<access_mode>normal</access_mode>
+	
+	<objective_function>
+		
+		<optimize>ED</optimize>
+		
+		
+		<design_objective>
+			
+			<weights>
+				<delay>0</delay>
+				<dynamic_power>0</dynamic_power>
+				<leakage_power>0</leakage_power>
+				<cycle_time>0</cycle_time>
+				<area>100</area>
+			</weights>
+			
+			
+			<deviations>
+				<delay>60</delay>
+				<dynamic_power>100000</dynamic_power>
+				<leakage_power>100000</leakage_power>
+				<cycle_time>100000</cycle_time>
+				<area>1000000</area>
+			</deviations>
+		</design_objective>
+		
+		
+		<nuca_design_objective>
+			<weights>
+				<delay>100</delay>
+				<dynamic_power>100</dynamic_power>
+				<leakage_power>0</leakage_power>
+				<cycle_time>0</cycle_time>
+				<area>100</area>
+			</weights>
+			<deviations>
+				<delay>10</delay>
+				<dynamic_power>10000</dynamic_power>
+				<leakage_power>10000</leakage_power>
+				<cycle_time>10000</cycle_time>
+				<area>10000</area>
+			</deviations>
+		</nuca_design_objective>
+	</objective_function>
+	
+	<interconnects>
+		
+		<source>RonHo2003</source>
+		
+		
+		
+		
+		<wire_signalling>Global_10</wire_signalling>
+		
+		
+		<wire_type>
+			<inside_mat>global</inside_mat>
+			<outside_mat>global</outside_mat>
+		</wire_type>
+		
+		
+		<projection>conservative</projection>
+	</interconnects>
+	
+	
+	<core_count>8</core_count>
+	
+	
+	<cache_level>L3</cache_level>
+	
+	<add_ecc>true</add_ecc>
+	
+	
+	<print_level>DETAILED</print_level>
+	
+	
+	<print_input_parameters>false</print_input_parameters>
+
+	
+	<force_cache_config>false</force_cache_config>
+	<Ndwl>64</Ndwl>
+	<Ndbl>64</Ndbl>
+	<Nspd>64</Nspd>
+	<Ndcm>1</Ndcm>
+	<Ndsam1>4</Ndsam1>
+	<Ndsam2>1</Ndsam2>
+	
+	
+	<page_size>8192</page_size> 
+	<burst_length>8</burst_length>
+	<internal_prefetch_width>8</internal_prefetch_width>
+</cache_config>
