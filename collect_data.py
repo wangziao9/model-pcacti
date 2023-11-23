@@ -11,6 +11,7 @@ assert(settings_file.readline() == "Input\n")
 for line in settings_file:
     if line == "\n":
         break
+    line = line.split('#')[0]
     line = line.split(',')
     inputs.append([item.strip() for item in line])
     input_names.append(line[0].strip())
@@ -18,6 +19,7 @@ assert(settings_file.readline() == "Output\n")
 for line in settings_file:
     if line == "\n":
         break
+    line = line.split('#')[0]
     output_names.append(line.strip())
 
 def load_dataframes(f):
@@ -43,6 +45,7 @@ def collect_data(ith:int) -> Tuple[List[str], List[str]]:
     xml_name = param[0]
     ret = list()
     errs = list()
+    print("Collecting data from PCACTI...")
     for xml_val in param[1:]:
         if ith == 0:
             print(xml_name, xml_val) # print progress

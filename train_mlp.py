@@ -56,6 +56,7 @@ def split_train_test(X, Y):
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_ratio, random_state=config_random_seed)
     else:
         # manually shuffle data
+        np.random.seed(config_random_seed)
         permute = np.random.permutation(len(X))
         X, Y = X[permute], Y[permute]
         target_node = input_transforms("technology_node", config_split_argument2)
@@ -69,11 +70,10 @@ if __name__ == "__main__":
     frames = get_dataframes()
     X, Y = transform_frames(frames)
     y = Y[:,config_output_idx]
-    print(X[0], y[0])
-    print(X.shape, y.shape)
+    print("X[0]: ", X[0], " y[0]: ", y[0])
+    print("X.shape: ", X.shape, " y.shape: ", y.shape)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     # train model and predict
-    print(y_test)
     regr = MLPRegressor(random_state=config_random_seed, max_iter=500).fit(X_train, y_train)
     y_pred = regr.predict(X_test)
     # evaluate results
