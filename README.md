@@ -6,6 +6,7 @@ PCACTI can be downloaded from this source (https://sportlab.usc.edu/downloads/do
 
 Put this reposiory aside to "pcacti", see below for directory structure.
 
+```
 ..
 |
 +-- pcacti
@@ -17,7 +18,8 @@ Put this reposiory aside to "pcacti", see below for directory structure.
 |-- model-pcacti
 |     |
 |     +--README.md
-+     +--...
+|     +--...
+```
 
 ## How to run code
 First, specify your settings in settings.cfg. For each line under "Input", specify the name of the cache configs to vary (as they appear in ref.xml) and their permissible values. For each line under "Output", specify the name of a output attribute you want to collect (as they appear in PCACTI's stdout). For each line under "Setup", specify the how the machine learning experiment is run, see comments in settings.cfg file.
