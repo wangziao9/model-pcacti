@@ -3,6 +3,7 @@ import numpy as np
 from collect_data import inputs, input_names, output_names, get_dataframes
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error
 from typing import Union, List, Tuple
 
@@ -20,10 +21,11 @@ def parse_next_config(f,name):
 config_random_seed = int(parse_next_config(settings_file, "Random State")[0])
 config_split_method, config_split_argument2 = parse_next_config(settings_file, "Train Test Split Method")
 config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
+config_method = parse_next_config(settings_file, "Method")[0]
 
 def input_transforms(name:str, value:str) -> Union[float, List[float]]:
     if name == "technology_node":
-        return float(value)
+        return 1000 * float(value)
     if name == "cache_size" or name == "associativity":
         return math.log(int(value), 2)
     if name == "ports.exclusive_read_port" or name == "ports.exclusive_write_port":
@@ -74,7 +76,14 @@ if __name__ == "__main__":
     print("X.shape: ", X.shape, " y.shape: ", y.shape)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     # train model and predict
-    regr = MLPRegressor(random_state=config_random_seed, max_iter=500).fit(X_train, y_train)
+    print("Training a "+ config_method)
+    if config_method == "MLP":
+        # Consider tuning the hidden_layer_sizes, solver and max_iter.
+        regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
+    elif config_method == "KNN":
+        regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
+    else:
+        print("Method not supported, exiting"); exit(0)
     y_pred = regr.predict(X_test)
     # evaluate results
     print("Predicting "+output_names[config_output_idx])

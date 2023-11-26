@@ -45,7 +45,6 @@ def collect_data(ith:int) -> Tuple[List[str], List[str]]:
     xml_name = param[0]
     ret = list()
     errs = list()
-    print("Collecting data from PCACTI...")
     for xml_val in param[1:]:
         if ith == 0:
             print(xml_name, xml_val) # print progress
