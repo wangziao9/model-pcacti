@@ -4,8 +4,12 @@ from collect_data import inputs, input_names, output_names, get_dataframes
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 from typing import Union, List, Tuple
+from sklearn.svm import SVR
+from sklearn.ensemble import RandomForestRegressor
+import matplotlib.pyplot as plt
+
 
 settings_file = open("settings.cfg",'r')
 while settings_file.__next__()!="Setup\n":
@@ -85,6 +89,10 @@ if __name__ == "__main__":
         regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
     elif config_method == "KNN":
         regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
+    elif config_method == "SVR":
+        regr = SVR(kernel='rbf', C= 100, gamma=0.001,epsilon=0.001, degree=5).fit(X_train, y_train)
+    elif config_method =="FOREST":
+        regr = RandomForestRegressor(n_estimators=100, max_depth=30, random_state=config_random_seed).fit(X_train, y_train)    
     else:
         print("Method not supported, exiting"); exit(0)
     y_pred = regr.predict(X_test)
@@ -92,10 +100,14 @@ if __name__ == "__main__":
     print("Predicting "+output_names[config_output_idx])
     mse = mean_squared_error(y_pred, y_test)
     rmse = np.sqrt(mse)
+    r2 = r2_score(y_test, y_pred)
     print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
+    print(f"R-squared: {r2}")
     y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
     y_std = np.sqrt(y_variance)
     print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
     coeff_of_determination = regr.score(X_test, y_test)
     assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
     print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
+   
+        
