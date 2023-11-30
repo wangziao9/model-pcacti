@@ -20,7 +20,9 @@ def parse_next_config(f,name):
 
 config_random_seed = int(parse_next_config(settings_file, "Random State")[0])
 config_split_method, config_split_argument2 = parse_next_config(settings_file, "Train Test Split Method")
-config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
+out_select = parse_next_config(settings_file, "Output Select")
+config_output_idx = [output_names.index(i) for i in out_select]
+print(f"DEBUG: config_output_idx = {config_output_idx}")
 config_method = parse_next_config(settings_file, "Method")[0]
 
 def input_transforms(name:str, value:str) -> Union[float, List[float]]:
@@ -89,13 +91,28 @@ if __name__ == "__main__":
         print("Method not supported, exiting"); exit(0)
     y_pred = regr.predict(X_test)
     # evaluate results
-    print("Predicting "+output_names[config_output_idx])
-    mse = mean_squared_error(y_pred, y_test)
+    print("Predicting "+str(out_select))
+    mse = mean_squared_error(y_pred, y_test) # We let it return the average of the MSEs for each prediction target
+    # print(f"DEBUG: MSE without uniform averaging: {mean_squared_error(y_pred, y_test, multioutput='raw_values')}")
     rmse = np.sqrt(mse)
     print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
-    y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
+    y_var_list = np.array([])
+    if len(y_test.shape) > 1:
+        # print(f"---\n\n---\nDEBUG: y_test[:,0] = {y_test[:,0]}")
+        for i in range(y_test.shape[1]):
+            y_var_list = np.append(y_var_list, ((y_test[:,i] - y_test[:,i].mean())**2).sum() / y_test.shape[0])
+    else:
+        y_var_list = np.array(((y_test - y_test.mean())**2).sum() / len(y_test))
+    # print(f" DEBUG: y_var_list: {y_var_list}")
+    y_variance = y_var_list.mean()
+    # print(f"  DEBUG: y_test.shape = {y_test.shape}")
+    # print(f"  DEBUG: (y_test - y_test.mean()) = {y_test - y_test.mean()}")
+    # print(f"  DEBUG: (y_test - y_test.mean()**2).sum() = {((y_test - y_test.mean())**2).sum()}")
+    # print(f"  DEBUG: len(y_test) = {len(y_test)}")
     y_std = np.sqrt(y_variance)
     print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
     coeff_of_determination = regr.score(X_test, y_test)
+    print(f"DEBUG - coefficient_of_determination:\n {coeff_of_determination}")
+    print(f"DEBUG - (1-mse/y_variance):\n {1-mse/y_variance}")
     assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
     print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
