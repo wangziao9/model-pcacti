@@ -33,6 +33,9 @@ def input_transforms(name:str, value:str) -> Union[float, List[float]]:
     if name == "access_mode":
         d = {"normal":[1,0,0], "sequential":[0,1,0], "fast":[0,0,1]}
         return d[value]
+    if name == "cache_level": # take into account if L2 or L3
+        d = {"L2":[1,0], "L3":[0,1]}
+        return d[value]
 
 def transform_frames(frames: List[List[str]]) -> Tuple[np.ndarray, np.ndarray]:
     X, Y = list(), list()
@@ -74,7 +77,9 @@ if __name__ == "__main__":
     print("X.shape: ", X.shape, " y.shape: ", y.shape)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     # train model and predict
-    regr = MLPRegressor(random_state=config_random_seed, max_iter=500).fit(X_train, y_train)
+    #print(X_train[0:10])
+    #regr = MLPRegressor(random_state=config_random_seed, max_iter=500).fit(X_train, y_train)
+    regr = MLPRegressor(hidden_layer_sizes=(11, 11, 11, 11, ), random_state=config_random_seed, max_iter=500).fit(X_train, y_train)
     y_pred = regr.predict(X_test)
     # evaluate results
     print("Predicting "+output_names[config_output_idx])
