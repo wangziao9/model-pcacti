@@ -106,15 +106,5 @@ if __name__ == "__main__":
     coeff_of_determination = regr.score(X_test, y_test)
     assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
     print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
-    plt.scatter(X_test[:,0], y_test, color='darkorange', label='data')
-    # plt.hold('on')
-    print(X_test.shape)
-    plt.scatter(X_test[:,0], y_pred, color='navy', lw=2, label='RBF model')
-    # plt.plot(X, y_lin, color='c', lw=lw, label='Linear model')
-    # plt.plot(X, y_poly, color='cornflowerblue', lw=lw, label='Polynomial model')
-    plt.xlabel('data')
-    plt.ylabel('target')
-    plt.title('Support Vector Regression')
-    plt.legend()
-    plt.show()
+   
         
