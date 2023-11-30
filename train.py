@@ -68,8 +68,6 @@ def split_train_test(X, Y):
         test_indices = (np.abs(X[:,0] - target_node) < 1e-6)
         X_train, Y_train = X[~test_indices], Y[~test_indices]
         X_test, Y_test = X[test_indices], Y[test_indices]
-        if config_split_argument2 in X_test[:, 0]:
-            print(f"Detected {config_split_argument2} in X_test!")
     return X_train, X_test, Y_train, Y_test
 
 if __name__ == "__main__":
@@ -84,7 +82,7 @@ if __name__ == "__main__":
     print("Training a "+ config_method)
     if config_method == "MLP":
         # Consider tuning the hidden_layer_sizes, solver and max_iter.
-        regr = MLPRegressor(hidden_layer_sizes=(11, 11, 11, 11,), solver='adam', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
+        regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
     elif config_method == "KNN":
         regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
     else:
