@@ -35,6 +35,9 @@ def input_transforms(name:str, value:str) -> Union[float, List[float]]:
     if name == "access_mode":
         d = {"normal":[1,0,0], "sequential":[0,1,0], "fast":[0,0,1]}
         return d[value]
+    if name == "cache_level": # take into account if L2 or L3
+        d = {"L2":[1,0], "L3":[0,1]}
+        return d[value]
 
 def transform_frames(frames: List[List[str]]) -> Tuple[np.ndarray, np.ndarray]:
     X, Y = list(), list()
