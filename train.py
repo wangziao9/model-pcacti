@@ -177,10 +177,10 @@ if __name__ == "__main__":
         y_std = np.sqrt(y_variance)
         print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
         coeff_of_determination = regr.score(X_test, y_test)
-        #print(f"DEBUG - coefficient_of_determination:\n {coeff_of_determination}")
-        #print(f"DEBUG - (1-mse/y_variance):\n {1-mse/y_variance}")
+        print(f"DEBUG - coefficient_of_determination:\n {coeff_of_determination}")
+        print(f"DEBUG - (1-mse/y_variance):\n {1-mse/y_variance}")
         #assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
-        #assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 5e-3)
+        assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 5e-3)
         print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
 
         if config_multi_r == "True":
