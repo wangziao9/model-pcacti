@@ -10,11 +10,6 @@ from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from skopt.space import Real, Categorical, Integer
 from skopt import BayesSearchCV
-<<<<<<< HEAD
-=======
-#from tqdm import tqdm
-
->>>>>>> 009142b (EM - Buggy implementation for making models predict on multiple targets)
 
 settings_file = open("settings.cfg",'r')
 while settings_file.__next__()!="Setup\n":
@@ -83,6 +78,56 @@ def split_train_test(X, Y):
         X_test, Y_test = X[test_indices], Y[test_indices]
     return X_train, X_test, Y_train, Y_test
 
+def display_results(X_test, y_pred, y_test, out_select):
+    print("Predicting "+ str(out_select))
+    if len(y_test.shape) > 1:
+        assert(len(out_select) == y_test.shape[1]), "ERR: The number of outputs doesn't match up...!"
+        # Make an array with param entries
+        y_mse = np.zeros((y.shape[1],))
+        y_r2 = np.zeros((y.shape[1],))
+        y_indiv_var = np.zeros((y.shape[1],))
+    else:
+        assert(len(out_select) == 1), "ERR: We only have one output, but number of elements in out_select is larger!"
+        y_mse = np.zeros((1,))
+        y_r2 = np.zeros((1,))
+        y_indiv_var = np.zeros((1,))
+    for i in range(y_mse.shape[0]):
+        y_mse[i] = mean_squared_error(y_pred[:,i], y_test[:,i])
+        y_r2[i] = r2_score(y_pred[:,i], y_test[:,i])
+        print(f"DEBUG - y_pred[:10,i] = {y_pred[:10,i]}")
+        print(f"DEBUG - y_pred[:,i].shape = {y_pred[:,i].shape}")
+        print(f"DEBUG - y_test[:10,i] = {y_test[:10,i]}")
+        print(f"DEBUG - y_test[:,i].shape = {y_test[:,i].shape}")
+        print(f"DEBUG - y_r2[i] = {y_r2[i]}")
+        y_indiv_var[i] = ((y_test[:,i] - np.average(y_test[:,i], axis=0))**2).sum(axis=0)
+    mse = mean_squared_error(y_pred, y_test)
+    rmse = np.sqrt(y_mse)
+    y_std = np.sqrt(y_indiv_var)
+    r2 = r2_score(y_test, y_pred)
+
+    for i in range(len(out_select)):
+        print(f"Output Category: {out_select[i]}")
+        print(f"    MSE: {y_mse[i]}")
+        print(f"    R-Squared: {y_r2[i]}")
+        print(f"    Variance: {y_indiv_var[i]}")
+        print(f"    Standard Devi.: {y_std[i]}")
+
+
+    print("Average MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,np.average(rmse)))
+    print(f"R-squared (Entire Dataset): {r2}")
+    print(f"Average Variance: {np.average(y_indiv_var)}")
+    print(f"Average Standard Deviation: {np.average(y_std)}")
+
+    #y_variance = ((y_test - np.average(y_test, axis=0))**2).sum(axis=0)
+    #y_std = np.sqrt(y_variance)
+
+    #print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
+    coeff_of_determination = regr.score(X_test, y_test)
+    print(f"Coef. Determination = {coeff_of_determination}")
+    print(f"(1 - mse)/y_variance = {(1 - mse)/np.average(y_indiv_var)}")
+    assert(np.abs(coeff_of_determination - (1-mse/np.average(y_indiv_var))) < 1e-4)
+    print("Average Coefficient of determination: {:.4g}".format(coeff_of_determination))
+
 if __name__ == "__main__":
     # preprocess data
     frames = get_dataframes()
@@ -107,21 +152,22 @@ if __name__ == "__main__":
         y_pred = regr.predict(X_test)
         # evaluate results
         #print("Predicting "+output_names[config_output_idx])
-        print("Predicting "+ str(out_select))
-        mse = mean_squared_error(y_pred, y_test)
-        rmse = np.sqrt(mse)
-        r2 = r2_score(y_test, y_pred)
-        print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
-        print(f"R-squared: {r2}")
+        display_results(X_test=X_test, y_pred=y_pred, y_test=y_test, out_select=out_select)
+        # print("Predicting "+ str(out_select))
+        # mse = mean_squared_error(y_pred, y_test)
+        # rmse = np.sqrt(mse)
+        # r2 = r2_score(y_test, y_pred)
+        # print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
+        # print(f"R-squared: {r2}")
 
-        y_variance = ((y_test - np.average(y_test, axis=0))**2).sum(axis=0)
-        y_std = np.sqrt(y_variance)
-        print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
-        coeff_of_determination = regr.score(X_test, y_test)
-        print(f"Coef. Determination = {coeff_of_determination}")
-        print(f"(1 - mse)/y_variance = {(1 - mse)/y_variance}")
-        assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
-        print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
+        # y_variance = ((y_test - np.average(y_test, axis=0))**2).sum(axis=0)
+        # y_std = np.sqrt(y_variance)
+        # print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
+        # coeff_of_determination = regr.score(X_test, y_test)
+        # print(f"Coef. Determination = {coeff_of_determination}")
+        # print(f"(1 - mse)/y_variance = {(1 - mse)/y_variance}")
+        # assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
+        # print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
     else:
         #model_name = ["KNN", "MLP", "SVR", "FOREST"]
         model_name = ["KNN", "MLP", "SVR"] # Forest took awhile, so I'm leaving it out for now
@@ -165,18 +211,19 @@ if __name__ == "__main__":
             with open('best_params.txt', 'w') as f:
                 f.write(i+" "+str(best_params)+'\n')
             y_pred = regr.predict(X_test)
-            print("Predicting "+output_names[config_output_idx])
+            display_results(X_test=X_test, y_pred=y_pred, y_test=y_test, out_select=out_select)
+            # print("Predicting "+output_names[config_output_idx])
             
-            mse = mean_squared_error(y_pred, y_test)
-            rmse = np.sqrt(mse)
-            r2 = r2_score(y_test, y_pred)
-            print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
-            print(f"R-squared: {r2}")
-            y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
-            y_std = np.sqrt(y_variance)
-            print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
-            coeff_of_determination = regr.score(X_test, y_test)
-            print(coeff_of_determination)
-            assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
-            print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
-            print()
+            # mse = mean_squared_error(y_pred, y_test)
+            # rmse = np.sqrt(mse)
+            # r2 = r2_score(y_test, y_pred)
+            # print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
+            # print(f"R-squared: {r2}")
+            # y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
+            # y_std = np.sqrt(y_variance)
+            # print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
+            # coeff_of_determination = regr.score(X_test, y_test)
+            # print(coeff_of_determination)
+            # assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
+            # print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
+            # print()
