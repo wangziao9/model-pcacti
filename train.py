@@ -10,6 +10,11 @@ from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from skopt.space import Real, Categorical, Integer
 from skopt import BayesSearchCV
+<<<<<<< HEAD
+=======
+#from tqdm import tqdm
+
+>>>>>>> 009142b (EM - Buggy implementation for making models predict on multiple targets)
 
 settings_file = open("settings.cfg",'r')
 while settings_file.__next__()!="Setup\n":
@@ -24,7 +29,9 @@ def parse_next_config(f,name):
 
 config_random_seed = int(parse_next_config(settings_file, "Random State")[0])
 config_split_method, config_split_argument2 = parse_next_config(settings_file, "Train Test Split Method")
-config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
+#config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
+out_select = parse_next_config(settings_file, "Output Select")
+config_output_idx = [output_names.index(i) for i in out_select]
 config_method = parse_next_config(settings_file, "Method")[0]
 config_paramsearch = parse_next_config(settings_file, "Param Search")[0]
 bayes_search_niter = 5
@@ -99,7 +106,8 @@ if __name__ == "__main__":
             print("Method not supported, exiting"); exit(0)
         y_pred = regr.predict(X_test)
         # evaluate results
-        print("Predicting "+output_names[config_output_idx])
+        #print("Predicting "+output_names[config_output_idx])
+        print("Predicting "+ str(out_select))
         mse = mean_squared_error(y_pred, y_test)
         rmse = np.sqrt(mse)
         r2 = r2_score(y_test, y_pred)
@@ -109,10 +117,13 @@ if __name__ == "__main__":
         y_std = np.sqrt(y_variance)
         print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
         coeff_of_determination = regr.score(X_test, y_test)
+        print(f"Coef. Determination = {coeff_of_determination}")
+        print(f"(1 - mse)/y_variance = {(1 - mse)/y_variance}")
         assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
         print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
     else:
-        model_name = ["KNN", "MLP", "SVR", "FOREST"]
+        #model_name = ["KNN", "MLP", "SVR", "FOREST"]
+        model_name = ["KNN", "MLP", "SVR"] # Forest took awhile, so I'm leaving it out for now
         for i in model_name:
             print("Training a "+ i)
             if i == "MLP":
