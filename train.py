@@ -113,7 +113,7 @@ if __name__ == "__main__":
         r2 = r2_score(y_test, y_pred)
         print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
         print(f"R-squared: {r2}")
-        y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
+        y_variance = ((y_test - y_test.mean(axis=0))**2).sum() / len(y_test)
         y_std = np.sqrt(y_variance)
         print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
         coeff_of_determination = regr.score(X_test, y_test)
