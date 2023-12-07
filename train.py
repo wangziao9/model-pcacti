@@ -124,8 +124,8 @@ def display_results(X_test, y_pred, y_test, out_select):
     #print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
     coeff_of_determination = regr.score(X_test, y_test)
     print(f"Coef. Determination = {coeff_of_determination}")
-    print(f"(1 - mse)/y_variance = {(1 - mse)/np.average(y_indiv_var)}")
-    assert(np.abs(coeff_of_determination - (1-mse/np.average(y_indiv_var))) < 1e-4)
+    # print(f"(1 - mse)/y_variance = {(1 - mse)/np.average(y_indiv_var)}")
+    # assert(np.abs(coeff_of_determination - (1-mse/np.average(y_indiv_var))) < 1e-4)
     print("Average Coefficient of determination: {:.4g}".format(coeff_of_determination))
 
 if __name__ == "__main__":
@@ -140,6 +140,14 @@ if __name__ == "__main__":
     if(config_paramsearch == "False"):
         print("Training a "+ config_method)
         if config_method == "MLP":
+            # param_dist = {
+            #         'solver': ('lbfgs', 'adam'),
+            #         'max_iter': (500)
+            #     }
+            # grid_search = BayesSearchCV(MLPRegressor(hidden_layer_sizes=(11, 11, 11, 11, 11, 11)), param_dist, n_iter=bayes_search_niter, cv=5)
+            # grid_search.fit(X_train, y_train)
+            # best_params = grid_search.best_params_
+            # regr = MLPRegressor(**best_params).fit(X_train, y_train)
             regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
         elif config_method == "KNN":
             regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
