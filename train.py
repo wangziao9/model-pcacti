@@ -8,6 +8,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from typing import Union, List, Tuple
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV,RandomizedSearchCV
 from skopt.space import Real, Categorical, Integer
 from skopt import BayesSearchCV
 
@@ -112,12 +113,19 @@ if __name__ == "__main__":
         assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
         print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
     else:
+        f_bestparam = open('best_params.txt', 'w')
         model_name = ["KNN", "MLP", "SVR", "FOREST"]
         for i in model_name:
-            print("Training a "+ i)
+            print("Parameter searching "+ i)
             if i == "MLP":
-                # Consider tuning the hidden_layer_sizes, solver and max_iter.
-                regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
+                param_grid = {
+                    'hidden_layer_sizes': [(x,y)for x in [10, 20] for y in [10, 20]],
+                    'solver': ["lbfgs", "adam"]
+                }
+                grid_search = GridSearchCV(MLPRegressor(max_iter=5000), param_grid, cv=5)
+                grid_search.fit(X_train, y_train)
+                best_params = grid_search.best_params_
+                regr = MLPRegressor(**best_params).fit(X_train, y_train)
             elif i == "KNN":
                 param_dist = {
                     'n_neighbors': (1, 10)
@@ -150,8 +158,7 @@ if __name__ == "__main__":
             else:
                 print("Method not supported, exiting"); exit(0)
             print(best_params, "this is the best params for "+i)
-            with open('best_params.txt', 'w') as f:
-                f.write(i+" "+str(best_params)+'\n')
+            f_bestparam.write(i+" "+str(best_params)+'\n')
             y_pred = regr.predict(X_test)
             print("Predicting "+output_names[config_output_idx])
             mse = mean_squared_error(y_pred, y_test)
@@ -167,3 +174,4 @@ if __name__ == "__main__":
             assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
             print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
             print()
+        f_bestparam.close()
