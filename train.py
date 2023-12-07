@@ -93,17 +93,7 @@ if __name__ == "__main__":
             # Consider tuning the hidden_layer_sizes, solver and max_iter.
             regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
         elif config_method == "KNN":
-            param_dist = {
-                    'n_neighbors': (1, 20)
-
-                }
-            grid_search = BayesSearchCV(KNeighborsRegressor(), param_dist, cv=5)
-            grid_search.fit(X_train, y_train)
-            best_params = grid_search.best_params_
-            print(best_params, "this is the best params for KNN")
-            with open('best_params.txt', 'a') as f:
-                f.write(str(best_params))
-            regr = KNeighborsRegressor(**best_params).fit(X_train, y_train)
+            
             regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
         elif config_method == "SVR":
             # param_grid  = {
