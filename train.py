@@ -8,7 +8,10 @@ from sklearn.metrics import mean_squared_error, r2_score
 from typing import Union, List, Tuple
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV,RandomizedSearchCV
 import matplotlib.pyplot as plt
+from skopt import BayesSearchCV
+from tqdm import tqdm
 
 
 settings_file = open("settings.cfg",'r')
@@ -26,6 +29,7 @@ config_random_seed = int(parse_next_config(settings_file, "Random State")[0])
 config_split_method, config_split_argument2 = parse_next_config(settings_file, "Train Test Split Method")
 config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
 config_method = parse_next_config(settings_file, "Method")[0]
+config_generate = parse_next_config(settings_file, "Generate_All")[0]
 
 def input_transforms(name:str, value:str) -> Union[float, List[float]]:
     if name == "technology_node":
@@ -83,31 +87,122 @@ if __name__ == "__main__":
     print("X.shape: ", X.shape, " y.shape: ", y.shape)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     # train model and predict
-    print("Training a "+ config_method)
-    if config_method == "MLP":
-        # Consider tuning the hidden_layer_sizes, solver and max_iter.
-        regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
-    elif config_method == "KNN":
-        regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
-    elif config_method == "SVR":
-        regr = SVR(kernel='rbf', C= 100, gamma=0.001,epsilon=0.001, degree=5).fit(X_train, y_train)
-    elif config_method =="FOREST":
-        regr = RandomForestRegressor(n_estimators=100, max_depth=30, random_state=config_random_seed).fit(X_train, y_train)    
+    if(config_generate == "False"):
+        print("Training a "+ config_method)
+        if config_method == "MLP":
+            # Consider tuning the hidden_layer_sizes, solver and max_iter.
+            regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
+        elif config_method == "KNN":
+            param_dist = {
+                    'n_neighbors': (1, 20)
+
+                }
+            grid_search = BayesSearchCV(KNeighborsRegressor(), param_dist, cv=5)
+            grid_search.fit(X_train, y_train)
+            best_params = grid_search.best_params_
+            print(best_params, "this is the best params for KNN")
+            with open('best_params.txt', 'a') as f:
+                f.write(str(best_params))
+            regr = KNeighborsRegressor(**best_params).fit(X_train, y_train)
+            regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
+        elif config_method == "SVR":
+            # param_grid  = {
+            # 'C': (1e-6, 1e+6),
+            # 'gamma': (1e-6, 1e+1),
+            # 'epsilon': (1e-6, 1e+1)
+            # }
+            # grid_search = BayesSearchCV(SVR(kernel='rbf'), param_grid, cv=5)
+            # # with tqdm(total=grid_search.total_iterations) as pbar:
+            # #     grid_search.fit(X, y, callback=lambda _: pbar.update(1))
+            # grid_search.fit(X_train, y_train)
+            # best_params = grid_search.best_params_
+            # print(best_params, "this is the best params")
+            # with open('best_params.txt', 'w') as f:
+            #     f.write(str(best_params))
+            # regr = SVR(kernel='rbf',**best_params).fit(X_train, y_train)
+            regr = SVR(kernel='rbf', C= 100, gamma=0.001,epsilon=0.001, degree=5).fit(X_train, y_train)
+        elif config_method =="FOREST":
+            regr = RandomForestRegressor(n_estimators=100, max_depth=30, random_state=config_random_seed).fit(X_train, y_train)    
+        else:
+            print("Method not supported, exiting"); exit(0)
+        y_pred = regr.predict(X_test)
+        # evaluate results
+        print("Predicting "+output_names[config_output_idx])
+        mse = mean_squared_error(y_pred, y_test)
+        rmse = np.sqrt(mse)
+        r2 = r2_score(y_test, y_pred)
+        print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
+        print(f"R-squared: {r2}")
+        y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
+        y_std = np.sqrt(y_variance)
+        print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
+        coeff_of_determination = regr.score(X_test, y_test)
+        assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
+        print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
     else:
-        print("Method not supported, exiting"); exit(0)
-    y_pred = regr.predict(X_test)
-    # evaluate results
-    print("Predicting "+output_names[config_output_idx])
-    mse = mean_squared_error(y_pred, y_test)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(y_test, y_pred)
-    print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
-    print(f"R-squared: {r2}")
-    y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
-    y_std = np.sqrt(y_variance)
-    print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
-    coeff_of_determination = regr.score(X_test, y_test)
-    assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
-    print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
-   
-        
+        model_name = ["KNN", "MLP", "SVR", "FOREST"]
+        for i in model_name:
+            print("Training a "+ i)
+            if i == "MLP":
+                # Consider tuning the hidden_layer_sizes, solver and max_iter.
+                regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
+            elif i == "KNN":
+                param_dist = {
+                    'n_neighbors': (1, 20)
+
+                }
+                grid_search = BayesSearchCV(KNeighborsRegressor(), param_dist, cv=5)
+                grid_search.fit(X_train, y_train)
+                best_params = grid_search.best_params_
+                print(best_params, "this is the best params for KNN")
+                with open('best_params.txt', 'a') as f:
+                    f.write(str(best_params))
+                regr = KNeighborsRegressor(**best_params).fit(X_train, y_train)
+            elif i == "SVR":
+                param_grid  = {
+            'C': (1e-6, 1e+6),
+            'gamma': (1e-6, 1e+1),
+            'epsilon': (1e-6, 1e+1)
+            }
+                grid_search = BayesSearchCV(SVR(kernel='rbf'), param_grid, cv=5, random_state=config_random_seed)
+                # with tqdm(total=grid_search.total_iterations) as pbar:
+                #     grid_search.fit(X, y, callback=lambda _: pbar.update(1))
+                grid_search.fit(X_train, y_train)
+                best_params = grid_search.best_params_
+                print(best_params, "this is the best params")
+                with open('best_params.txt', 'a') as f:
+                    f.write(str(best_params))
+                regr = SVR(kernel='rbf',**best_params).fit(X_train, y_train)
+                # regr = SVR(kernel='rbf', C= 100, gamma=0.001,epsilon=0.001, degree=5).fit(X_train, y_train)
+            elif i =="FOREST":
+                param_dist = {
+                        'n_estimators': (100, 1000),
+                        'max_depth': (5, 50),
+                        'min_samples_split': (2, 20),
+                        'min_samples_leaf': (1, 20),
+                }
+                grid_search = BayesSearchCV(RandomForestRegressor(random_state=config_random_seed), param_dist, cv=5, random_state=config_random_seed)
+                grid_search.fit(X_train, y_train)
+                best_params = grid_search.best_params_
+                print(best_params, "this is the best params for FOREST")
+                with open('best_params.txt', 'a') as f:
+                    f.write(str(best_params))
+                regr = RandomForestRegressor(**best_params, random_state=config_random_seed).fit(X_train, y_train)    
+                # regr = RandomForestRegressor(n_estimators=100, max_depth=30, random_state=config_random_seed).fit(X_train, y_train)    
+            else:
+                print("Method not supported, exiting"); exit(0)
+            y_pred = regr.predict(X_test)
+            print("Predicting "+output_names[config_output_idx])
+            mse = mean_squared_error(y_pred, y_test)
+            rmse = np.sqrt(mse)
+            r2 = r2_score(y_test, y_pred)
+            print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
+            print(f"R-squared: {r2}")
+            y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
+            y_std = np.sqrt(y_variance)
+            print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
+            coeff_of_determination = regr.score(X_test, y_test)
+            assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
+            print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
+            print()
+    
