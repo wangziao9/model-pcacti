@@ -98,7 +98,6 @@ def xml_get(xml_name:str) -> Union[str, None]:
     for name in xml_name.split("."):
         elem = elem.find(name)
     if elem is None:
-        assert(False)
         return False
     else:
         return elem.text
