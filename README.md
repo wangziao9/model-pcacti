@@ -2,9 +2,9 @@
 Replace the cache modeling tool "PCACTI" with machine learning models.
 
 ## Environment
-PCACTI can be downloaded from this source (https://sportlab.usc.edu/downloads/download/), select PACKAGE - PCACTI on the webpage. You need to extract PCACTI into a directory named "pcacti" and run `make` under "pcacti" to build the tool.
+PCACTI can be downloaded from this source (https://sportlab.usc.edu/downloads/download/), select PACKAGE - PCACTI on the webpage. You need to extract PCACTI into a directory named "pcacti" and run `make` under "pcacti" to build the tool. 
 
-Put this reposiory aside to "pcacti", see below for directory structure.
+Put this repository aside to "pcacti", see below for directory structure.
 
 ```
 ..
@@ -19,6 +19,20 @@ Put this reposiory aside to "pcacti", see below for directory structure.
 |     |
 |     +--README.md
 |     +--...
+```
+
+To make PCACTI accept cache configuration input through command line arguments, please add the following lines to PCACTI's source code, file io.cc, function cacti_interface:
+
+```
+strcpy(g_ip->data_array_cell_tech_file,"xmls/devices/cmos_14nm_std.xml");
+strcpy(g_ip->data_array_peri_tech_file,"xmls/devices/cmos_14nm_std.xml");
+strcpy(g_ip->tag_array_cell_tech_file,"xmls/devices/cmos_14nm_std.xml");
+strcpy(g_ip->tag_array_peri_tech_file,"xmls/devices/cmos_14nm_std.xml");
+```
+
+just before the line
+```
+init_tech_params(g_ip->F_sz_um, false);
 ```
 
 ## How to run code
