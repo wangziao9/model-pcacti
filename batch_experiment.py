@@ -5,6 +5,7 @@ Example usage: python batch_experiment.py -n 10 -r 0.2 0 KNN
 For help: python batch_experiment.py -h
 """
 
+import copy
 import math
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -13,6 +14,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
 from train import get_dataframes, transform_frames, output_names
 import matplotlib.pyplot as plt
 
@@ -32,13 +34,26 @@ def new_model(model_name):
     elif model_name == "KNN":
         return KNeighborsRegressor(n_neighbors=1)
     elif model_name == "SVR":
-        return SVR(kernel='rbf', C=100, gamma=0.1,epsilon=0.01)
+        return SVR(kernel='rbf', C=100, gamma=1,epsilon=0.1)
     elif model_name =="FOREST":
         return RandomForestRegressor(n_estimators=100, max_depth=30, random_state=0)
 
-def model_specific_input_transform(X, model_name):
+def model_specific_input_transform(X_train, X_test, model_name):
     if model_name == "KNN":
-        X[:,0] = X[:,0]*0.001
+        X_train_dup = copy.deepcopy(X_train)
+        X_train_dup[:,0] = X_train_dup[:,0]*0.001
+        X_test_dup = copy.deepcopy(X_test)
+        X_test_dup[:,0] = X_test_dup[:,0]*0.001
+        return X_train_dup, X_test_dup
+    elif model_name == "SVR":
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+        X_train_scaled[:,0] = X_train_scaled[:,0]*0.001
+        X_test_scaled[:,0] = X_test_scaled[:,0]*0.001
+        return X_train_scaled, X_test_scaled
+    else:
+        return X_train, X_test
 
 frames = get_dataframes()
 X, Y = transform_frames(frames)
@@ -51,17 +66,16 @@ n_fraction = len(X_train) // args.n_devide
 n_train = [len(X_train)-i*n_fraction for i in range(args.n_devide)]
 
 def experiment_with_model(model_name):
-    model_specific_input_transform(X_train, model_name)
-    model_specific_input_transform(X_test, model_name)
     rmse_store = list()
     for i in range(args.n_devide):
-        print("Training a "+model_name+" model with "+str(len(X_train)-i*n_fraction)+" samples")
+        X_train_tf, X_test_tf = model_specific_input_transform(X_train[i*n_fraction:], X_test, model_name)
+        print("Training a "+model_name+" model with "+str(len(X_train_tf))+" samples")
         regr = new_model(model_name)
-        regr.fit(X_train[i*n_fraction:], y_train[i*n_fraction:])
-        y_pred = regr.predict(X_test)
+        regr.fit(X_train_tf, y_train[i*n_fraction:])
+        y_pred = regr.predict(X_test_tf)
         mse = mean_squared_error(y_pred, y_test)
         rmse = np.sqrt(mse)
-        coeff_of_determination = regr.score(X_test, y_test)
+        coeff_of_determination = regr.score(X_test_tf, y_test)
         print("coef. of determination: %.4f"%coeff_of_determination + ", rmse:%.4f"%rmse)
         rmse_store.append(rmse)
     return rmse_store
@@ -77,4 +91,4 @@ plt.xlim(left=0)
 plt.ylim(bottom=0)
 plt.legend()
 plt.title("Using "+args.ml_model+" to predict "+output_names[args.output_idx])
-plt.show()
+plt.savefig(args.ml_model+"_"+["Access","Cycle","Read","Write","Leak"][args.output_idx]+".png",bbox_inches='tight')

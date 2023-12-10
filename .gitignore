@@ -2,3 +2,4 @@ __pycache__
 *.csv
 tmp.xml
 .DS_Store
+.png
