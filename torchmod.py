@@ -46,7 +46,7 @@ class CactiNet(nn.Module):
             nn.ReLU(),
 
             # 33 in from last layer, output 5 values...
-            nn.Linear(33, 1)
+            nn.Linear(33, 5)
         )
 
     def forward(self, x):

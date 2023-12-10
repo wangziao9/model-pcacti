@@ -23,7 +23,9 @@ def parse_next_config(f,name):
 
 config_random_seed = int(parse_next_config(settings_file, "Random State")[0])
 config_split_method, config_split_argument2 = parse_next_config(settings_file, "Train Test Split Method")
-config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
+#config_output_idx = output_names.index(parse_next_config(settings_file, "Output Select")[0])
+out_select = parse_next_config(settings_file, "Output Select")
+config_output_idx = [output_names.index(i) for i in out_select]
 config_method = parse_next_config(settings_file, "Method")[0]
 config_paramsearch = parse_next_config(settings_file, "Param Search")[0]
 bayes_search_niter = 5
