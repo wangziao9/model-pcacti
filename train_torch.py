@@ -93,11 +93,12 @@ if __name__ == "__main__":
     cnet = CactiNet()
     
     # Define the loss function and optimizer
-    loss_function = nn.L1Loss()
+    #loss_function = nn.L1Loss()
+    loss_function = nn.MSELoss()
     optimizer = torch.optim.Adam(cnet.parameters(), lr=1e-4)
   
     # Run the training loop
-    for epoch in range(0, 5): # 5 epochs at maximum
+    for epoch in range(0, 10): # 5 epochs at maximum
         
         # Print epoch
         print(f'Starting epoch {epoch+1}')

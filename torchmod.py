@@ -34,19 +34,41 @@ class CactiNet(nn.Module):
         self.layers = nn.Sequential(
             # 11 inputs (including 1-hot encoding for Cache Level and Access Mode),
             # Let's say it learns... 33 outputs?
-            nn.Linear(11, 33),
+            nn.Linear(11, 22),
             nn.ReLU(),
             
             # 33 in from last layer, output 66
-            nn.Linear(33, 66),
+            nn.Linear(22, 33),
             nn.ReLU(),
 
             # 66 in from last layer, output 33 again
-            nn.Linear(66, 33),
+            nn.Linear(33, 44),
             nn.ReLU(),
 
             # 33 in from last layer, output 5 values...
-            nn.Linear(33, 1)
+            nn.Linear(44, 55),
+            nn.ReLU(),
+
+            nn.Linear(55, 66),
+            nn.ReLU(),
+
+            nn.Linear(66, 55),
+            nn.ReLU(),
+
+            nn.Linear(55, 44),
+            nn.ReLU(),
+
+            nn.Linear(44, 33),
+            nn.ReLU(),
+
+            nn.Linear(33, 22),
+            nn.ReLU(),
+
+            nn.Linear(22, 11),
+            nn.ReLU(),
+
+            nn.Linear(11, 1)
+            
         )
 
     def forward(self, x):
