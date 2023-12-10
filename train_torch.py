@@ -89,17 +89,18 @@ if __name__ == "__main__":
 
     dataset = CactiDataset(X_train, y_train)
     
-    trainloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True, num_workers=1)
+    trainloader = torch.utils.data.DataLoader(dataset, batch_size=30, shuffle=True, num_workers=1)
   
     # Initialize the MLP
     cnet = CactiNet()
     
     # Define the loss function and optimizer
-    loss_function = nn.L1Loss()
+    #loss_function = nn.L1Loss()
+    loss_function = nn.MSELoss()
     optimizer = torch.optim.Adam(cnet.parameters(), lr=1e-4)
   
     # Run the training loop
-    for epoch in range(0, 5): # 5 epochs at maximum
+    for epoch in range(0, 15): # 5 epochs at maximum
         
         # Print epoch
         print(f'Starting epoch {epoch+1}')
@@ -116,7 +117,7 @@ if __name__ == "__main__":
             # if i % 10 == 0:
             #     print(f"DEBUG - Inputs is {inputs}")
             # print(f"DEBUG - Targets is {targets}")
-            targets = targets.reshape((targets.shape[0], 1))
+            targets = targets.reshape((targets.shape[0], 5))
             
             # Zero the gradients
             optimizer.zero_grad()
@@ -150,8 +151,8 @@ if __name__ == "__main__":
     cnet.eval()
 
     # Get the two tensors ready
-    y_gt = torch.zeros(1,1)
-    y_predicted = torch.zeros(1,1)
+    y_gt = torch.zeros(1,5)
+    y_predicted = torch.zeros(1,5)
 
     # Iterate over the DataLoader for training data
     for i, data in enumerate(predloader, 0):
@@ -159,21 +160,45 @@ if __name__ == "__main__":
         # Get and prepare inputs
         inputs, targets = data
         inputs, targets = inputs.float(), targets.float()
-        # print(f"DEBUG - Inputs is {inputs}")
-        # print(f"DEBUG - Targets is {targets}")
-        targets = targets.reshape((targets.shape[0], 1))
+        #print(f"DEBUG - Inputs is {inputs}")
+        #print(f"DEBUG - Targets is {targets}")
+        targets = targets.reshape((targets.shape[0], 5))
+        #print(f"DEBUG - After reshape Targets is {targets}")
 
         y_gt = torch.cat((y_gt, targets), 0)
         
         # Make prediction
         outputs = cnet(inputs)
-        # print(f"DEBUG - Outputs: {outputs}")
+        #print(f"DEBUG - Outputs: {outputs}")
         y_predicted = torch.cat((y_predicted, outputs), 0)
+
+        # Compute loss
+        loss = loss_function(outputs, targets)
+
+        # # Compute MSE for this bit?
+        # temp_y_gt = targets.detach().numpy()
+        # temp_y_pred = outputs.detach().numpy()
+        # temp_mse = mean_squared_error(temp_y_gt, temp_y_pred)
+
+        # if temp_mse > 30.0:
+        #     print(f"For mini-batch {i}, got MSE {temp_mse:.3f}!")
+        #     print(f"Outputs:\n {outputs}")
+        #     print(f"Ground Truth:\n {targets}")
+        
+        # Print statistics
+        current_loss += loss.item()
+        if i % 10 == 0:
+            print('Loss after mini-batch %5d: %.3f' %
+                (i + 1, current_loss / 500))
+            current_loss = 0.0
         
     num_y_gt = y_gt.detach().numpy()[1:]
     num_y_predicted = y_predicted.detach().numpy()[1:]
 
+    print(f"First 3 entries of Ground Truth:\n {num_y_gt[:3]}\n")
+    print(f"First 3 entries of Predicted:\n {num_y_predicted[:3]}\n")
+
     mse = mean_squared_error(num_y_gt, num_y_predicted)
 
     # We're done.
-    print(f"Mean Squared Error on test set is: {mse:.2f}")
+    print(f"Mean Squared Error on test set is: {mse:.3f}")
