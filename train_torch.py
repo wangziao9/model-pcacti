@@ -2,14 +2,13 @@ import math
 import numpy as np
 from collect_data import inputs, input_names, output_names, get_dataframes
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPRegressor
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error
 from typing import Union, List, Tuple
-from sklearn.svm import SVR
-from sklearn.ensemble import RandomForestRegressor
-from skopt.space import Real, Categorical, Integer
-from skopt import BayesSearchCV
+import torch
+from torch import nn
+from torchmod import CactiDataset
+from torchmod import CactiNet
+
 
 settings_file = open("settings.cfg",'r')
 while settings_file.__next__()!="Setup\n":
@@ -85,85 +84,94 @@ if __name__ == "__main__":
     print("X.shape: ", X.shape, " y.shape: ", y.shape)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     # train model and predict
-    if(config_paramsearch == "False"):
-        print("Training a "+ config_method)
-        if config_method == "MLP":
-            regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
-        elif config_method == "KNN":
-            regr = KNeighborsRegressor(n_neighbors=1).fit(X_train, y_train)
-        elif config_method == "SVR":
-            regr = SVR(kernel='rbf', C= 100, gamma=0.001,epsilon=0.001, degree=5).fit(X_train, y_train)
-        elif config_method =="FOREST":
-            regr = RandomForestRegressor(n_estimators=100, max_depth=30, random_state=config_random_seed).fit(X_train, y_train)    
-        else:
-            print("Method not supported, exiting"); exit(0)
-        y_pred = regr.predict(X_test)
-        # evaluate results
-        print("Predicting "+output_names[config_output_idx])
-        mse = mean_squared_error(y_pred, y_test)
-        rmse = np.sqrt(mse)
-        r2 = r2_score(y_test, y_pred)
-        print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
-        print(f"R-squared: {r2}")
-        y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
-        y_std = np.sqrt(y_variance)
-        print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
-        coeff_of_determination = regr.score(X_test, y_test)
-        assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
-        print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
-    else:
-        model_name = ["KNN", "MLP", "SVR", "FOREST"]
-        for i in model_name:
-            print("Training a "+ i)
-            if i == "MLP":
-                # Consider tuning the hidden_layer_sizes, solver and max_iter.
-                regr = MLPRegressor(hidden_layer_sizes=(20, 20), solver='lbfgs', max_iter=5000, random_state=config_random_seed).fit(X_train, y_train)
-            elif i == "KNN":
-                param_dist = {
-                    'n_neighbors': (1, 10)
-                }
-                grid_search = BayesSearchCV(KNeighborsRegressor(), param_dist, n_iter=bayes_search_niter, cv=5)
-                grid_search.fit(X_train, y_train)
-                best_params = grid_search.best_params_
-                regr = KNeighborsRegressor(**best_params).fit(X_train, y_train)
-            elif i == "SVR":
-                param_grid  = {
-                    'C': (1e-6, 1e+6),
-                    'gamma': (1e-6, 1e+1),
-                    'epsilon': (1e-6, 1e+1)
-                }
-                grid_search = BayesSearchCV(SVR(kernel='rbf'), param_grid, n_iter=bayes_search_niter, cv=5, random_state=config_random_seed)
-                grid_search.fit(X_train, y_train)
-                best_params = grid_search.best_params_
-                regr = SVR(kernel='rbf',**best_params).fit(X_train, y_train)
-            elif i =="FOREST":
-                param_dist = {
-                    'n_estimators': (100, 1000),
-                    'max_depth': (5, 50),
-                    'min_samples_split': (2, 20),
-                    'min_samples_leaf': (1, 20),
-                }
-                grid_search = BayesSearchCV(RandomForestRegressor(random_state=config_random_seed), param_dist, n_iter=bayes_search_niter, cv=5, random_state=config_random_seed)
-                grid_search.fit(X_train, y_train)
-                best_params = grid_search.best_params_
-                regr = RandomForestRegressor(**best_params, random_state=config_random_seed).fit(X_train, y_train)    
-            else:
-                print("Method not supported, exiting"); exit(0)
-            print(best_params, "this is the best params for "+i)
-            with open('best_params.txt', 'w') as f:
-                f.write(i+" "+str(best_params)+'\n')
-            y_pred = regr.predict(X_test)
-            print("Predicting "+output_names[config_output_idx])
-            mse = mean_squared_error(y_pred, y_test)
-            rmse = np.sqrt(mse)
-            r2 = r2_score(y_test, y_pred)
-            print("MSE (Mean Squared Error): {:.4g}, Root MSE: {:.4g}".format(mse,rmse))
-            print(f"R-squared: {r2}")
-            y_variance = ((y_test - y_test.mean())**2).sum() / len(y_test)
-            y_std = np.sqrt(y_variance)
-            print("Variance and Standard Deviation of Ground Truth: {:.4g}, {:.4g}".format(y_variance, y_std))
-            coeff_of_determination = regr.score(X_test, y_test)
-            print(coeff_of_determination)
-            assert(np.abs(coeff_of_determination - (1-mse/y_variance)) < 1e-4)
-            print("Coefficient of determination: {:.4g}".format(coeff_of_determination))
-            print()
+
+    dataset = CactiDataset(X_train, y_train)
+    
+    trainloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True, num_workers=1)
+  
+    # Initialize the MLP
+    cnet = CactiNet()
+    
+    # Define the loss function and optimizer
+    loss_function = nn.L1Loss()
+    optimizer = torch.optim.Adam(cnet.parameters(), lr=1e-4)
+  
+    # Run the training loop
+    for epoch in range(0, 5): # 5 epochs at maximum
+        
+        # Print epoch
+        print(f'Starting epoch {epoch+1}')
+        
+        # Set current loss value
+        current_loss = 0.0
+        
+        # Iterate over the DataLoader for training data
+        for i, data in enumerate(trainloader, 0):
+            
+            # Get and prepare inputs
+            inputs, targets = data
+            inputs, targets = inputs.float(), targets.float()
+            # if i % 10 == 0:
+            #     print(f"DEBUG - Inputs is {inputs}")
+            # print(f"DEBUG - Targets is {targets}")
+            targets = targets.reshape((targets.shape[0], 1))
+            
+            # Zero the gradients
+            optimizer.zero_grad()
+            
+            # Perform forward pass
+            outputs = cnet(inputs)
+            
+            # Compute loss
+            loss = loss_function(outputs, targets)
+            
+            # Perform backward pass
+            loss.backward()
+            
+            # Perform optimization
+            optimizer.step()
+            
+            # Print statistics
+            current_loss += loss.item()
+            if i % 10 == 0:
+                print('Loss after mini-batch %5d: %.3f' %
+                    (i + 1, current_loss / 500))
+                current_loss = 0.0
+
+    # Training is complete.
+    print('Training process has finished.')
+
+    pred_dataset = CactiDataset(X_test, y_test)
+    
+    predloader = torch.utils.data.DataLoader(pred_dataset, batch_size=10, shuffle=True, num_workers=1)
+
+    cnet.eval()
+
+    # Get the two tensors ready
+    y_gt = torch.zeros(1,1)
+    y_predicted = torch.zeros(1,1)
+
+    # Iterate over the DataLoader for training data
+    for i, data in enumerate(predloader, 0):
+        
+        # Get and prepare inputs
+        inputs, targets = data
+        inputs, targets = inputs.float(), targets.float()
+        # print(f"DEBUG - Inputs is {inputs}")
+        # print(f"DEBUG - Targets is {targets}")
+        targets = targets.reshape((targets.shape[0], 1))
+
+        y_gt = torch.cat((y_gt, targets), 0)
+        
+        # Make prediction
+        outputs = cnet(inputs)
+        # print(f"DEBUG - Outputs: {outputs}")
+        y_predicted = torch.cat((y_predicted, outputs), 0)
+        
+    num_y_gt = y_gt.detach().numpy()[1:]
+    num_y_predicted = y_predicted.detach().numpy()[1:]
+
+    mse = mean_squared_error(num_y_gt, num_y_predicted)
+
+    # We're done.
+    print(f"Mean Squared Error on test set is: {mse:.2f}")
