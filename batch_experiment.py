@@ -1,6 +1,7 @@
 """
 Experiment using the random split setting.
-Investigates how model error relates to the numbers of available training points
+Investigates how model error relates to the numbers of available training points.
+Repeats every experiment and averages result.
 Example usage: python batch_experiment.py -s 0 --num_repeat 3 -test_ratio 0.5 -n_devide 10 0
 For help: python batch_experiment.py -h
 """

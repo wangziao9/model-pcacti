@@ -1,3 +1,12 @@
+"""
+Selects a target tech node, train model on all available data that is not from that tech node, and tests on the target tech node.
+Performs the ablve experiment for every output catagory (individually) and every model.
+Outputs a csv file, row is output catagory, column is model used.
+Repeats every experiment and averages result.
+Example usage: python batch_technode.py -s 0 -n 3 -t 0.032
+For help: python batch_technode.py -h
+"""
+
 import csv
 import numpy as np
 from sklearn.model_selection import train_test_split
