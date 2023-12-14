@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 class CactiDataset(torch.utils.data.Dataset):
     '''
-    Prepare the Boston dataset for regression
+    Prepare the Cacti dataset for regression
     '''
 
     def __init__(self, X, y, scale_data=True):
